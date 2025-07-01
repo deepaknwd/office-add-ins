@@ -11,38 +11,38 @@
 <p><strong>To:</strong> <span id="to"></span></p>
 <p><strong>CC:</strong> <span id="cc"></span></p>
 <h4>Body (Plain Text):</h4>
-<pre id="bodyText"></pre>
+<pre id="bodyText">Loading...</pre>
 
 <script>
     Office.onReady(info => {
       if (info.host === Office.HostType.Outlook) {
         const item = Office.context.mailbox.item;
 
-        // Subject
-        item.subject.getAsync(result => {
-          if (result.status === Office.AsyncResultStatus.Succeeded) {
-            document.getElementById("subject").innerText = result.value;
-          }
-        });
+        // ✅ Subject (string in read mode)
+        document.getElementById("subject").innerText = item.subject;
 
-        // From
-        const from = item.from;
-        document.getElementById("from").innerText = `${from.displayName} <${from.emailAddress}>`;
+        // ✅ From
+        if (item.from) {
+          document.getElementById("from").innerText =
+            `${item.from.displayName} <${item.from.emailAddress}>`;
+        }
 
-        // To Recipients
+        // ✅ To Recipients
         const toRecipients = item.to || [];
         document.getElementById("to").innerText =
           toRecipients.map(r => `${r.displayName} <${r.emailAddress}>`).join(', ');
 
-        // CC Recipients
+        // ✅ CC Recipients
         const ccRecipients = item.cc || [];
         document.getElementById("cc").innerText =
           ccRecipients.map(r => `${r.displayName} <${r.emailAddress}>`).join(', ');
 
-        // Body
+        // ✅ Body (plain text)
         item.body.getAsync(Office.CoercionType.Text, result => {
           if (result.status === Office.AsyncResultStatus.Succeeded) {
             document.getElementById("bodyText").innerText = result.value;
+          } else {
+            document.getElementById("bodyText").innerText = "Failed to load body.";
           }
         });
       }
