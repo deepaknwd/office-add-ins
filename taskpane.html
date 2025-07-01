@@ -6,60 +6,81 @@
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 </head>
 <body class="p-3">
-  <h3>Email Info</h3>
-  <p><strong>Subject:</strong> <span id="subject">Loading...</span></p>
+  <h3>Freshdesk</h3>
+<!--   <p><strong>Subject:</strong> <span id="subject">Loading...</span></p>
   <p><strong>From:</strong> <span id="from"></span></p>
   <p><strong>To:</strong> <span id="to"></span></p>
   <p><strong>CC:</strong> <span id="cc"></span></p>
   <h4>Body (Plain Text):</h4>
-  <pre id="bodyText">Loading...</pre>
+  <pre id="bodyText">Loading...</pre> -->
+
+  <button id="createTicketBtn" class="btn btn-primary mt-3">Create Ticket</button>
+
+  <div id="ticketMsg" class="mt-3"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     const baseURL = 'https://deepaksinghdelhi96.freshdesk.com/api/v2';
     const headers = {
-      "Authorization": "Basic YlRnRnN2SnR1V2VHbjRJdFU5UTM6", // Replace with your real API key
+      "Authorization": "Basic YlRnRnN2SnR1V2VHbjRJdFU5UTM6", // Base64-encoded API key
       "Content-Type": "application/json"
     };
 
+    let emailData = {
+      subject: "No subject",
+      description: "No body",
+      email: "unknown@example.com"
+    };
+
+    // Load email info once Outlook is ready
     Office.onReady(info => {
       if (info.host === Office.HostType.Outlook) {
-        handleEmailInfo();
+        const item = Office.context.mailbox.item;
+
+        // Subject
+        document.getElementById("subject").innerText = item.subject;
+        emailData.subject = item.subject;
+
+        // From
+        if (item.from) {
+          const fromStr = `${item.from.displayName} <${item.from.emailAddress}>`;
+          document.getElementById("from").innerText = fromStr;
+          emailData.email = item.from.emailAddress;
+        }
+
+        // To
+        const to = (item.to || []).map(r => `${r.displayName} <${r.emailAddress}>`).join(', ');
+        document.getElementById("to").innerText = to;
+
+        // CC
+        const cc = (item.cc || []).map(r => `${r.displayName} <${r.emailAddress}>`).join(', ');
+        document.getElementById("cc").innerText = cc;
+
+        // Body
+        item.body.getAsync(Office.CoercionType.Text, result => {
+          if (result.status === Office.AsyncResultStatus.Succeeded) {
+            document.getElementById("bodyText").innerText = result.value;
+            emailData.description = result.value;
+          } else {
+            document.getElementById("bodyText").innerText = "Failed to load body.";
+            emailData.description = "Failed to load body.";
+          }
+        });
       }
     });
 
-    async function handleEmailInfo() {
-      const item = Office.context.mailbox.item;
-
-      const subject = item.subject || "No subject";
-      document.getElementById("subject").innerText = subject;
-
-      const from = item.from || {};
-      const email = `${from.displayName || ""} <${from.emailAddress || ""}>`;
-      document.getElementById("from").innerText = email;
-
-      const to = (item.to || []).map(r => `${r.displayName} <${r.emailAddress}>`).join(', ');
-      document.getElementById("to").innerText = to;
-
-      const cc = (item.cc || []).map(r => `${r.displayName} <${r.emailAddress}>`).join(', ');
-      document.getElementById("cc").innerText = cc;
-
-      let description = "Not loaded";
-      try {
-        description = await getBodyText(item);
-        document.getElementById("bodyText").innerText = description;
-      } catch (err) {
-        description = "Failed to load body.";
-        document.getElementById("bodyText").innerText = description;
-      }
-
+    // Handle ticket creation on button click
+    document.getElementById("createTicketBtn").addEventListener("click", async () => {
       const payload = {
-        subject,
-        description,
-        email: from.emailAddress || "unknown@example.com",
+        subject: emailData.subject,
+        description: emailData.description,
+        email: emailData.email,
         priority: 1,
         status: 2
       };
+
+      const msgBox = document.getElementById("ticketMsg");
+      msgBox.innerHTML = "⏳ Creating ticket...";
 
       try {
         const res = await fetch(`${baseURL}/tickets`, {
@@ -68,28 +89,20 @@
           body: JSON.stringify(payload)
         });
 
+        const data = await res.json();
+
         if (res.ok) {
-          alert('✅ Freshdesk ticket created successfully!');
+          msgBox.innerHTML = `
+            ✅ <strong>Ticket created successfully!</strong><br>
+            Ticket ID: <code>${data.id}</code>
+          `;
         } else {
-          const err = await res.json();
-          alert('❌ Freshdesk Error: ' + (err.message || res.statusText));
+          msgBox.innerHTML = `❌ Failed to create ticket: ${data.message || res.statusText}`;
         }
       } catch (err) {
-        alert('❌ Network Error: ' + err.message);
+        msgBox.innerHTML = `❌ Error: ${err.message}`;
       }
-    }
-
-    function getBodyText(item) {
-      return new Promise((resolve, reject) => {
-        item.body.getAsync(Office.CoercionType.Text, result => {
-          if (result.status === Office.AsyncResultStatus.Succeeded) {
-            resolve(result.value);
-          } else {
-            reject(result.error);
-          }
-        });
-      });
-    }
+    });
   </script>
 </body>
 </html>
