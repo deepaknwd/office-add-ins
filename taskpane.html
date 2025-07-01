@@ -38,31 +38,24 @@
 
         // Subject
         emailData.subject = item.subject || "(No Subject)";
-        document.getElementById("subject").innerText = emailData.subject;
-
         // From
         if (item.from) {
           const fromText = `${item.from.displayName} <${item.from.emailAddress}>`;
-          document.getElementById("from").innerText = fromText;
           emailData.email = item.from.emailAddress;
         }
 
         // To
         const to = (item.to || []).map(r => `${r.displayName} <${r.emailAddress}>`).join(', ');
-        document.getElementById("to").innerText = to;
 
         // CC
         const cc = (item.cc || []).map(r => `${r.displayName} <${r.emailAddress}>`).join(', ');
-        document.getElementById("cc").innerText = cc;
 
         // Body (wait until getAsync completes)
         item.body.getAsync(Office.CoercionType.Text, result => {
           if (result.status === Office.AsyncResultStatus.Succeeded) {
             emailData.description = result.value;
-            document.getElementById("bodyText").innerText = result.value;
           } else {
             emailData.description = "Could not load email body.";
-            document.getElementById("bodyText").innerText = "Failed to load body.";
           }
         });
       }
