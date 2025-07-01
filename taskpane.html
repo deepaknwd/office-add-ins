@@ -27,19 +27,18 @@
     };
 
     let emailData = {
-      subject: "No subject",
-      description: "No body",
-      email: "unknown@example.com"
+      subject: "",
+      description: "",
+      email: ""
     };
 
-    // Load email info once Outlook is ready
-    Office.onReady(info => {
+    Office.onReady(async info => {
       if (info.host === Office.HostType.Outlook) {
         const item = Office.context.mailbox.item;
 
         // Subject
-        document.getElementById("subject").innerText = item.subject;
-        emailData.subject = item.subject;
+        emailData.subject = item.subject || "(No Subject)";
+        document.getElementById("subject").innerText = emailData.subject;
 
         // From
         if (item.from) {
@@ -57,19 +56,22 @@
         document.getElementById("cc").innerText = cc;
 
         // Body
-        item.body.getAsync(Office.CoercionType.Text, result => {
-          if (result.status === Office.AsyncResultStatus.Succeeded) {
-            document.getElementById("bodyText").innerText = result.value;
-            emailData.description = result.value;
-          } else {
-            document.getElementById("bodyText").innerText = "Failed to load body.";
-            emailData.description = "Failed to load body.";
-          }
+        await new Promise((resolve, reject) => {
+          item.body.getAsync(Office.CoercionType.Text, result => {
+            if (result.status === Office.AsyncResultStatus.Succeeded) {
+              emailData.description = result.value;
+              document.getElementById("bodyText").innerText = result.value;
+              resolve();
+            } else {
+              emailData.description = "Could not load body";
+              document.getElementById("bodyText").innerText = "Failed to load body.";
+              resolve();
+            }
+          });
         });
       }
     });
 
-    // Handle ticket creation on button click
     document.getElementById("createTicketBtn").addEventListener("click", async () => {
       const payload = {
         subject: emailData.subject,
@@ -97,12 +99,13 @@
             Ticket ID: <code>${data.id}</code>
           `;
         } else {
-          msgBox.innerHTML = `❌ Failed to create ticket: ${data.message || res.statusText}`;
+          msgBox.innerHTML = `❌ Failed: ${data.message || res.statusText}`;
         }
       } catch (err) {
         msgBox.innerHTML = `❌ Error: ${err.message}`;
       }
     });
+
   </script>
 </body>
 </html>
