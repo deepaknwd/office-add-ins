@@ -26,13 +26,13 @@
       "Content-Type": "application/json"
     };
 
-    let emailData = {
+     const emailData = {
       subject: "",
-      description: "",
-      email: ""
+      email: "",
+      description: ""
     };
 
-    Office.onReady(async info => {
+    Office.onReady(info => {
       if (info.host === Office.HostType.Outlook) {
         const item = Office.context.mailbox.item;
 
@@ -42,8 +42,8 @@
 
         // From
         if (item.from) {
-          const fromStr = `${item.from.displayName} <${item.from.emailAddress}>`;
-          document.getElementById("from").innerText = fromStr;
+          const fromText = `${item.from.displayName} <${item.from.emailAddress}>`;
+          document.getElementById("from").innerText = fromText;
           emailData.email = item.from.emailAddress;
         }
 
@@ -55,28 +55,31 @@
         const cc = (item.cc || []).map(r => `${r.displayName} <${r.emailAddress}>`).join(', ');
         document.getElementById("cc").innerText = cc;
 
-        // Body
-        await new Promise((resolve, reject) => {
-          item.body.getAsync(Office.CoercionType.Text, result => {
-            if (result.status === Office.AsyncResultStatus.Succeeded) {
-              emailData.description = result.value;
-              document.getElementById("bodyText").innerText = result.value;
-              resolve();
-            } else {
-              emailData.description = "Could not load body";
-              document.getElementById("bodyText").innerText = "Failed to load body.";
-              resolve();
-            }
-          });
+        // Body (wait until getAsync completes)
+        item.body.getAsync(Office.CoercionType.Text, result => {
+          if (result.status === Office.AsyncResultStatus.Succeeded) {
+            emailData.description = result.value;
+            document.getElementById("bodyText").innerText = result.value;
+          } else {
+            emailData.description = "Could not load email body.";
+            document.getElementById("bodyText").innerText = "Failed to load body.";
+          }
         });
       }
     });
 
     document.getElementById("createTicketBtn").addEventListener("click", async () => {
+      const { subject, email, description } = emailData;
+
+      if (!email || !description) {
+        document.getElementById("ticketMsg").innerHTML = `⚠️ Please wait until email and body are fully loaded.`;
+        return;
+      }
+
       const payload = {
-        subject: emailData.subject,
-        description: emailData.description,
-        email: emailData.email,
+        subject,
+        email,
+        description,
         priority: 1,
         status: 2
       };
