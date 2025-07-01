@@ -14,17 +14,28 @@
 <pre id="bodyText">Loading...</pre>
 
 <script>
+
+    const baseURL = 'https://deepaksinghdelhi96.freshdesk.com/api/v2';
+    const headers = {
+      "Authorization": "Basic YlRnRnN2SnR1V2VHbjRJdFU5UTM6", // Replace with your Freshdesk API key (Base64-encoded)
+      "Content-Type": "application/json"
+    };
     Office.onReady(info => {
       if (info.host === Office.HostType.Outlook) {
         const item = Office.context.mailbox.item;
+        const subject = "None";
+        const description = "None";
+        const email = "None";
 
         // ✅ Subject (string in read mode)
         document.getElementById("subject").innerText = item.subject;
+        subject = item.subject;
 
         // ✅ From
         if (item.from) {
           document.getElementById("from").innerText =
             `${item.from.displayName} <${item.from.emailAddress}>`;
+            email = `${item.from.displayName} <${item.from.emailAddress}>`;
         }
 
         // ✅ To Recipients
@@ -41,10 +52,38 @@
         item.body.getAsync(Office.CoercionType.Text, result => {
           if (result.status === Office.AsyncResultStatus.Succeeded) {
             document.getElementById("bodyText").innerText = result.value;
+            description = result.value;
           } else {
             document.getElementById("bodyText").innerText = "Failed to load body.";
+            description = "Failed to load body.";
           }
         });
+        const payload = {
+          subject,
+          description,
+          email,
+          priority: 1,
+          status: 2
+        };
+
+        try {
+          const res = await fetch(`${baseURL}/tickets`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload)
+          });
+
+          if (res.ok) {
+            alert('✅ Ticket created successfully!');
+            document.getElementById('createTicketForm').reset();
+          } else {
+            const err = await res.json();
+            alert('❌ Failed: ' + (err.message || res.statusText));
+          }
+        } catch (err) {
+          alert('❌ Error: ' + err.message);
+        }
+
       }
     });
 </script>
