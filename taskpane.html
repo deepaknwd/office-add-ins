@@ -1,12 +1,554 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Email Info</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>Technoboost - Task Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 </head>
+<style>
+        :root {
+            --primary-blue: #316AB7;
+            --light-blue: rgba(49, 106, 183, 0.07);
+            --border-light: rgba(0, 0, 0, 0.11);
+            --text-primary: #1a1919;
+            --text-secondary: #252c32;
+            --text-muted: #808080;
+            --orange: #ee570b;
+            --orange-due: #dc4f09;
+            --green: #4f9c20;
+            --bg-light: #f8f9fa;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ffffff;
+            margin: 0;
+            padding: 0;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .plugin-container {
+            width: 420px;
+            min-height: 100vh;
+            background: white;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 24px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo {
+            width: 120px;
+            height: auto;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+            color: #000;
+        }
+
+        .close-btn:hover {
+            color: #666;
+        }
+
+        /* Create Task Header */
+        .create-task-header {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 15px 24px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .back-btn {
+            width: 22px;
+            height: 22px;
+            border: 1px solid rgba(0, 0, 0, 0.27);
+            border-radius: 50%;
+            background: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .back-btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .create-task-title {
+            font-family: 'SF Pro Display', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            color: #000;
+            margin: 0;
+        }
+
+        /* Task Summary Cards */
+        .task-summary {
+            padding: 16px 15px;
+            display: flex;
+            gap: 16px;
+        }
+
+        .task-card {
+            flex: 1;
+            border: 1px solid rgba(0, 0, 0, 0.18);
+            border-radius: 5px;
+            padding: 16px 18px;
+            background: white;
+        }
+
+        .task-card-title {
+            font-weight: 500;
+            font-size: 14px;
+            color: #000;
+            margin-bottom: 16px;
+        }
+
+        .task-stats {
+            display: flex;
+            gap: 16px;
+        }
+
+        .task-stat {
+            text-align: left;
+        }
+
+        .task-stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+
+        .task-stat-number {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .task-stat-number.pending {
+            color: var(--orange);
+        }
+
+        .task-stat-number.completed {
+            color: var(--green);
+        }
+
+        /* Navigation */
+        .nav-section {
+            padding: 0 21px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .tab-switch {
+            background: var(--bg-light);
+            border-radius: 20px;
+            padding: 4px;
+            display: flex;
+            position: relative;
+        }
+
+        .tab-btn {
+            padding: 8px 20px;
+            border: none;
+            background: none;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            z-index: 2;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--primary-blue);
+            border: 1px solid rgba(49, 106, 183, 0.28);
+        }
+
+        .tab-btn:not(.active) {
+            color: #0e0e0e;
+        }
+
+        .create-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .create-btn:hover {
+            background: #2857a3;
+        }
+
+        /* Task Cards */
+        .task-list {
+            padding: 0 17px;
+        }
+
+        .task-item {
+            background: white;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            margin-bottom: 13px;
+            box-shadow: 0px 3px 2px -2px rgba(0,0,0,0.06), 0px 5px 3px -2px rgba(0,0,0,0.02);
+        }
+
+        .task-content {
+            padding: 15px 16px;
+        }
+
+        .task-badge {
+            background: var(--light-blue);
+            color: #424242;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 9px;
+        }
+
+        .task-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+            line-height: 1.5;
+        }
+
+        .task-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            opacity: 0.75;
+            margin-bottom: 11px;
+            line-height: 1.4;
+            letter-spacing: -0.084px;
+        }
+
+        .task-attachments {
+            margin-bottom: 11px;
+        }
+
+        .attachment-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #202325;
+            opacity: 0.75;
+            margin-bottom: 6px;
+            letter-spacing: -0.084px;
+        }
+
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .attachment-icon {
+            width: 14px;
+            height: 14px;
+            color: #000;
+        }
+
+        .attachment-name {
+            font-size: 14px;
+            color: var(--text-secondary);
+            opacity: 0.75;
+            letter-spacing: -0.084px;
+        }
+
+        .download-icon {
+            width: 15px;
+            height: 15px;
+            color: var(--primary-blue);
+            cursor: pointer;
+        }
+
+        .task-details {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 11px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            padding-top: 11px;
+        }
+
+        .detail-item {
+            flex: 1;
+            border-right: 1px solid rgba(0, 0, 0, 0.19);
+            padding-right: 12px;
+        }
+
+        .detail-item:last-child {
+            border-right: none;
+            padding-right: 0;
+        }
+
+        .detail-label {
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0.75;
+            margin-bottom: 6px;
+            letter-spacing: -0.084px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0.75;
+            letter-spacing: -0.084px;
+        }
+
+        .detail-value.created-date {
+            color: #000;
+        }
+
+        .detail-value.due-date {
+            color: var(--orange-due);
+        }
+
+        .detail-value.created-by {
+            color: #000;
+        }
+
+        .see-more {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--primary-blue);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 0;
+        }
+
+        .see-more:hover {
+            opacity: 0.8;
+        }
+
+        .expand-arrow {
+            width: 9px;
+            height: 4.5px;
+            transition: transform 0.3s;
+        }
+
+        .expand-arrow.expanded {
+            transform: rotate(180deg);
+        }
+
+        .task-details.collapsed {
+            display: none;
+        }
+
+        .vertical-indicator {
+            position: absolute;
+            right: 11px;
+            top: 345px;
+            width: 9px;
+            height: 60px;
+            background: var(--primary-blue);
+            border-radius: 50px;
+        }
+
+        /* Create Task Form Styles */
+        .create-task-form {
+            padding: 0 26px;
+            margin-top: 54px;
+        }
+
+        .form-group {
+            margin-bottom: 21px;
+        }
+
+        .form-label {
+            font-family: 'SF Pro Display', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            color: #000;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .form-control {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            border-radius: 100px;
+            padding: 10px 16px;
+            font-family: 'SF Pro Display', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            color: #828282;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            color: #000;
+        }
+
+        .form-control::placeholder {
+            color: #828282;
+        }
+
+        .form-textarea {
+            border-radius: 10px;
+            height: 97px;
+            resize: vertical;
+            padding-top: 12px;
+        }
+
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 7 11'%3e%3cpath stroke='%23316AB7' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M5.5 1L1 5.5L5.5 10'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 9px 11px;
+            padding-right: 40px;
+            /*transform: rotate(100deg);*/
+            /*background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 7 11'%3e%3cpath stroke='%23316AB7' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M5.5 1L1 5.5L5.5 10' transform='rotate(270)'/%3e%3c/svg%3e");*/
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 40px;
+            padding-bottom: 30px;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            border: 1px solid var(--primary-blue);
+            color: var(--primary-blue);
+            border-radius: 10000px;
+            padding: 10px 20px;
+            font-family: 'SF Pro Display', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            width: 169px;
+            height: 33px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-submit {
+            background: var(--primary-blue);
+            border: none;
+            color: white;
+            border-radius: 10000px;
+            padding: 10px 20px;
+            font-family: 'SF Pro Display', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            width: 169px;
+            height: 33px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-cancel:hover {
+            background-color: rgba(49, 106, 183, 0.05);
+        }
+
+        .btn-submit:hover {
+            background-color: #2857a3;
+        }
+
+        /* Hide/Show Views */
+        .main-view {
+            display: block;
+        }
+
+        .create-task-view {
+            display: none;
+        }
+
+        .main-view.hidden {
+            display: none;
+        }
+
+        .create-task-view.show {
+            display: block;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .plugin-container {
+                width: 100%;
+            }
+            
+            .task-summary {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .task-details {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .detail-item {
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.19);
+                padding-bottom: 8px;
+                padding-right: 0;
+            }
+            
+            .detail-item:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            .form-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn-cancel,
+            .btn-submit {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    </style>
 <body class="p-3">
-  <h3>Freshdesk</h3>
 <!--   <p><strong>Subject:</strong> <span id="subject">Loading...</span></p>
   <p><strong>From:</strong> <span id="from"></span></p>
   <p><strong>To:</strong> <span id="to"></span></p>
@@ -14,11 +556,389 @@
   <h4>Body (Plain Text):</h4>
   <pre id="bodyText">Loading...</pre> -->
 
+    <div class="plugin-container">
+        <!-- Main View -->
+        <div class="main-view" id="mainView">
+            <!-- Header -->
+            <div class="header">
+                <div class="logo-container">
+                    <!-- Technoboost Logo SVG -->
+                    <svg class="logo" viewBox="0 0 120 18" fill="none">
+                        <g>
+                            <!-- Logo circles -->
+                            <circle cx="8.5" cy="8.5" r="8.5" fill="#2AB7C9" opacity="0.997"/>
+                            <circle cx="8.5" cy="8.5" r="7" fill="#FDD531"/>
+                            <!-- Text -->
+                            <text x="24" y="13" font-family="SF Pro Display, sans-serif" font-size="11" font-weight="600" fill="#000">technoboost</text>
+                        </g>
+                    </svg>
+                </div>
+                <button class="close-btn" onclick="closePlugin()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Task Summary Cards -->
+            <div class="task-summary">
+                <div class="task-card">
+                    <div class="task-card-title">My Tasks</div>
+                    <div class="task-stats">
+                        <div class="task-stat">
+                            <div class="task-stat-label">Pending</div>
+                            <div class="task-stat-number pending">04</div>
+                        </div>
+                        <div class="task-stat">
+                            <div class="task-stat-label">Completed</div>
+                            <div class="task-stat-number completed">23</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="task-card">
+                    <div class="task-card-title">Team Tasks</div>
+                    <div class="task-stats">
+                        <div class="task-stat">
+                            <div class="task-stat-label">Pending</div>
+                            <div class="task-stat-number pending">04</div>
+                        </div>
+                        <div class="task-stat">
+                            <div class="task-stat-label">Completed</div>
+                            <div class="task-stat-number completed">23</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="nav-section">
+                <div class="tab-switch">
+                    <button class="tab-btn active" onclick="switchTab('my-tasks', this)">My Tasks</button>
+                    <button class="tab-btn" onclick="switchTab('team-tasks', this)">Team Tasks</button>
+                </div>
+                <button class="create-btn" onclick="showCreateTask()">
+                    <i class="fas fa-plus"></i>
+                    Create Task
+                </button>
+            </div>
+
+            <!-- Task List -->
+            <div class="task-list">
+                <!-- Detailed Task Card -->
+                <div class="task-item">
+                    <div class="task-content">
+                        <div class="task-badge">Project Name</div>
+                        <div class="task-title">Improve cards readability</div>
+                        <div class="task-description">As a team license owner, I want to use multiplied limits</div>
+                        
+                        <div class="task-attachments">
+                            <div class="attachment-label">Attachments</div>
+                            <div class="attachment-item">
+                                <i class="fas fa-file-alt attachment-icon"></i>
+                                <span class="attachment-name">File name</span>
+                                <i class="fas fa-download download-icon"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="task-details" id="details-1">
+                            <div class="detail-item">
+                                <div class="detail-label" style="color: #5d5f5f;">Created Date</div>
+                                <div class="detail-value created-date">12/03/2024</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label" style="color: #44484b;">Due Date</div>
+                                <div class="detail-value due-date">22/03/2024</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label" style="color: #4b4f53;">Created By</div>
+                                <div class="detail-value created-by">Name</div>
+                            </div>
+                        </div>
+                        
+                        <button class="see-more" onclick="toggleDetails('details-1', this)">
+                            See More Details
+                            <svg class="expand-arrow" viewBox="0 0 7 11" fill="none">
+                                <path d="M5.5 1L1 5.5L5.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Collapsed Task Card -->
+                <div class="task-item">
+                    <div class="task-content">
+                        <div class="task-badge">Project Name</div>
+                        <div class="task-title">Improve cards readability</div>
+                        <div class="task-description">As a team license owner, I want to use multiplied limits</div>
+                        
+                        <div class="task-details collapsed" id="details-2">
+                            <div class="detail-item">
+                                <div class="detail-label" style="color: #5d5f5f;">Created Date</div>
+                                <div class="detail-value created-date">12/03/2024</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label" style="color: #44484b;">Due Date</div>
+                                <div class="detail-value due-date">22/03/2024</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label" style="color: #4b4f53;">Created By</div>
+                                <div class="detail-value created-by">Name</div>
+                            </div>
+                        </div>
+                        
+                        <button class="see-more" onclick="toggleDetails('details-2', this)">
+                            See More Details
+                            <svg class="expand-arrow" viewBox="0 0 7 11" fill="none">
+                                <path d="M5.5 1L1 5.5L5.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Another Collapsed Task Card -->
+                <div class="task-item">
+                    <div class="task-content">
+                        <div class="task-badge">Project Name</div>
+                        <div class="task-title">Improve cards readability</div>
+                        <div class="task-description">As a team license owner, I want to use multiplied limits</div>
+                        
+                        <div class="task-details collapsed" id="details-3">
+                            <div class="detail-item">
+                                <div class="detail-label" style="color: #5d5f5f;">Created Date</div>
+                                <div class="detail-value created-date">12/03/2024</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label" style="color: #44484b;">Due Date</div>
+                                <div class="detail-value due-date">22/03/2024</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label" style="color: #4b4f53;">Created By</div>
+                                <div class="detail-value created-by">Name</div>
+                            </div>
+                        </div>
+                        
+                        <button class="see-more" onclick="toggleDetails('details-3', this)">
+                            See More Details
+                            <svg class="expand-arrow" viewBox="0 0 7 11" fill="none">
+                                <path d="M5.5 1L1 5.5L5.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vertical Indicator -->
+            <!-- <div class="vertical-indicator"></div> -->
+        </div>
+
+        <!-- Create Task View -->
+        <div class="create-task-view" id="createTaskView">
+            <!-- Create Task Header -->
+            <div class="header">
+                <div class="logo-container">
+                    <!-- Technoboost Logo SVG -->
+                    <svg class="logo" viewBox="0 0 120 18" fill="none">
+                        <g>
+                            <!-- Logo circles -->
+                            <circle cx="8.5" cy="8.5" r="8.5" fill="#2AB7C9" opacity="0.997"/>
+                            <circle cx="8.5" cy="8.5" r="7" fill="#FDD531"/>
+                            <!-- Text -->
+                            <text x="24" y="13" font-family="SF Pro Display, sans-serif" font-size="11" font-weight="600" fill="#000">technoboost</text>
+                        </g>
+                    </svg>
+                </div>
+                <button class="close-btn" onclick="closePlugin()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Create Task Header with Back Button -->
+            <div class="create-task-header">
+                <button class="back-btn" onclick="showMainView()">
+                    <svg viewBox="0 0 22 22" fill="none" style="width: 14px; height: 14px;">
+                        <path d="M13.25 6.5L8.75 11L13.25 15.5" stroke="#316AB7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <h1 class="create-task-title">Create Task</h1>
+            </div>
+
+            <!-- Create Task Form -->
+            <div class="create-task-form">
+                <form id="createTaskForm">
+                    <div class="form-group">
+                        <label class="form-label">Project</label>
+                        <select class="form-control form-select" name="project" required>
+                            <option value="">Select</option>
+                            <option value="project1">Project Alpha</option>
+                            <option value="project2">Project Beta</option>
+                            <option value="project3">Project Gamma</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Task Title</label>
+                        <input type="text" class="form-control" name="taskTitle" placeholder="Enter task title" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Task Description</label>
+                        <textarea class="form-control form-textarea" name="taskDescription" placeholder="Enter task description" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Assignee</label>
+                        <select class="form-control form-select" name="assignee" required>
+                            <option value="">Select</option>
+                            <option value="user1">John Doe</option>
+                            <option value="user2">Jane Smith</option>
+                            <option value="user3">Mike Johnson</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Due Date</label>
+                        <input type="date" class="form-control" name="dueDate" required>
+                    </div>
+
+                   <!--  <div class="form-group">
+                        <label class="form-label">Attachments</label>
+                        <input type="file" class="form-control" name="attachments" multiple accept=".pdf,.doc,.docx,.jpg,.png,.txt">
+                    </div> -->
+
+                    <div class="form-buttons">
+                        <button type="button" class="btn-cancel" onclick="showMainView()">Cancel</button>
+                        <button type="submit" class="btn-submit">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
   <button id="createTicketBtn" class="btn btn-primary mt-3">Create Ticket</button>
 
   <div id="ticketMsg" class="mt-3"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Close plugin function
+        function closePlugin() {
+            if (typeof Office !== 'undefined' && Office.context) {
+                // Office Add-in environment
+                Office.context.ui.closeContainer();
+            } else {
+                // Fallback for testing
+                console.log('Plugin would close in Office environment');
+                alert('Plugin closed (this is just a demo)');
+            }
+        }
+
+        // Show Create Task View
+        function showCreateTask() {
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('createTaskView').classList.add('show');
+        }
+
+        // Show Main View
+        function showMainView() {
+            document.getElementById('mainView').classList.remove('hidden');
+            document.getElementById('createTaskView').classList.remove('show');
+            // Reset form
+            document.getElementById('createTaskForm').reset();
+        }
+
+        // Tab switching
+        function switchTab(tabName, element) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked tab
+            element.classList.add('active');
+            
+            // Here you would typically load different task data
+            console.log('Switched to:', tabName);
+        }
+
+        // Toggle task details
+        function toggleDetails(detailsId, button) {
+            const details = document.getElementById(detailsId);
+            const arrow = button.querySelector('.expand-arrow');
+            
+            if (details.classList.contains('collapsed')) {
+                details.classList.remove('collapsed');
+                arrow.classList.add('expanded');
+                button.innerHTML = `See Less Details ${arrow.outerHTML}`;
+            } else {
+                details.classList.add('collapsed');
+                arrow.classList.remove('expanded');
+                button.innerHTML = `See More Details ${arrow.outerHTML}`;
+            }
+        }
+
+        // Download attachment
+        function downloadAttachment(filename) {
+            console.log('Downloading:', filename);
+            // Here you would implement the download logic
+            alert(`Downloading ${filename}`);
+        }
+
+        // Form submission
+        document.getElementById('createTaskForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const formData = new FormData(this);
+            const taskData = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (key === 'attachments') {
+                    if (!taskData[key]) taskData[key] = [];
+                    taskData[key].push(value);
+                } else {
+                    taskData[key] = value;
+                }
+            }
+            
+            console.log('Task Data:', taskData);
+            
+            // Here you would send the data to your backend
+            alert('Task created successfully!');
+            
+            // Return to main view
+            showMainView();
+        });
+
+        // Add click handlers for download icons
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.download-icon').forEach(icon => {
+                icon.addEventListener('click', function() {
+                    const filename = this.previousElementSibling.textContent;
+                    downloadAttachment(filename);
+                });
+            });
+        });
+
+        // Simulate real-time updates
+        function updateTaskCounts() {
+            // This would typically fetch real data from your API
+            console.log('Updating task counts...');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Technoboost Task Manager loaded');
+            
+            // Set up any Office.js initialization if in Office environment
+            if (typeof Office !== 'undefined') {
+                Office.onReady((info) => {
+                    console.log('Office Add-in ready');
+                });
+            }
+        });
+    </script>
+  
   <script>
     const baseURL = 'https://deepaksinghdelhi96.freshdesk.com/api/v2';
     const headers = {
